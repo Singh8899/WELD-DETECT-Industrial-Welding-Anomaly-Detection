@@ -1,4 +1,4 @@
-# Anomaly Detection Welding YOLO-CNN
+# WELD-DETECT: Industrial Welding Anomaly Detection
 
 A two-stage deep learning pipeline for welding quality inspection combining YOLO object detection and ResNet-50 binary classification for automated good/bad weld classification.
 
