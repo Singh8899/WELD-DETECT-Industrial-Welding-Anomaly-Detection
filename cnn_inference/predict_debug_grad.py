@@ -15,7 +15,7 @@ from pytorch_grad_cam import GradCAM, HiResCAM, ScoreCAM, GradCAMPlusPlus, Ablat
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 from pytorch_grad_cam.utils.image import show_cam_on_image
 
-image_path = 'examples/20250730_190642_222398.jpeg'
+image_path = 'examples/20250721_154817_360058.jpeg'
 output_dir = 'grad_results'
 
 logger = logging.getLogger(__name__)

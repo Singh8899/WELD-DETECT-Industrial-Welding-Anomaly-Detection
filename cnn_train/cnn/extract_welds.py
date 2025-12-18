@@ -209,10 +209,10 @@ def main():
     """Main extraction pipeline"""
 
     # Configuration
-    base_dir = Path(os.getenv("DATASET_DIR"))
+    base_dir = Path(os.getenv("DATASET_DIR", ""))
     train_dir = base_dir / "train"
     val_dir = base_dir / "val"
-    output_dir = Path(os.getenv("CNN_DATASET_DIR"))
+    output_dir = Path(os.getenv("CNN_DATASET_DIR", ""))
 
     print("=== Welding Region Extraction ===")
 

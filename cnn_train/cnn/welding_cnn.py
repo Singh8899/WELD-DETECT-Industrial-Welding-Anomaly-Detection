@@ -10,6 +10,7 @@ import cv2
 import numpy as np
 import torch
 import torch.nn as nn
+import albumentations as A
 import torch.nn.functional as F
 from pathlib import Path
 from sklearn.metrics import (roc_auc_score, classification_report, confusion_matrix, 
@@ -27,6 +28,43 @@ from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv())
 
+# Define the pipeline once
+welding_transform = A.Compose([
+    A.ShiftScaleRotate(
+        shift_limit=0.1, 
+        scale_limit=0.1, 
+        rotate_limit=0, # We handle rotation separately below if you want
+        border_mode=cv2.BORDER_CONSTANT, 
+        value=114, # Gray padding if we shift out of bounds
+        p=0.8
+    ),
+    A.HorizontalFlip(p=0.5),
+    A.VerticalFlip(p=0.5),
+    A.Rotate(limit=10, p=0.5),        # Slight rotation
+    A.CLAHE(clip_limit=2.0, p=1.0),   # Enhance crack visibility
+    A.GaussNoise(var_limit=(10.0, 50.0), p=0.5), # Simulate sensor noise
+    A.RandomBrightnessContrast(p=0.5),
+])
+""" welding_transform = A.Compose([
+    # 1. GEOMETRIC (Safe for welds)
+    A.HorizontalFlip(p=0.5),
+    A.VerticalFlip(p=0.5),
+    A.Rotate(limit=10, border_mode=cv2.BORDER_CONSTANT, value=128, p=0.5),
+    
+    # 2. LIGHTING & CONTRAST (Critical for cracks)
+    # RandomBrightnessContrast covers both your separate PIL calls
+    A.RandomBrightnessContrast(brightness_limit=0.3, contrast_limit=0.3, p=0.5),
+    
+    # 3. TEXTURE & SENSOR NOISE
+    # OneOf picks exactly one from the list, or none.
+    # Great for mixing different types of "camera quality" issues.
+    A.OneOf([
+        A.GaussNoise(var_limit=(10.0, 50.0), p=1.0),
+        A.ISONoise(color_shift=(0.01, 0.05), intensity=(0.1, 0.5), p=1.0),
+        A.GaussianBlur(blur_limit=(3, 5), p=1.0),
+    ], p=0.5),
+
+]) """
 
 class LetterboxResize:
     """Enhanced letterbox resize for optimal quality"""
@@ -60,38 +98,18 @@ class LetterboxResize:
         return Image.fromarray(canvas)
 
 class WeldAugmentation:
-    """Light augmentations for weld ROIs"""
-    
-    def __init__(self, p=0.5):
-        self.p = p
-    
     def __call__(self, image):
-        """Apply random augmentations"""
-        if random.random() < self.p:
-            # Horizontal flip (if orientation doesn't matter for your welds)
-            if random.random() < 0.5:
-                image = image.transpose(Image.FLIP_LEFT_RIGHT)
-            
-            # Brightness and contrast
-            if random.random() < 0.5:
-                enhancer = ImageEnhance.Brightness(image)
-                image = enhancer.enhance(random.uniform(0.6, 1.4))
-            
-            if random.random() < 0.5:
-                enhancer = ImageEnhance.Contrast(image)
-                image = enhancer.enhance(random.uniform(0.6, 1.4))
-            
-            # Sharpness
-            if random.random() < 0.3:
-                enhancer = ImageEnhance.Sharpness(image)
-                image = enhancer.enhance(random.uniform(0.6, 1.5))
-            
-            # Small rotation (±5 degrees)
-            if random.random() < 0.7:
-                angle = random.uniform(-10, 10)
-                image = image.rotate(angle, fillcolor=(114, 114, 114))
+        """
+        Input:  PIL Image or Numpy Array
+        Output: Transformed Numpy Array (ready for Tensor conversion)
+        """
+        # Albumentations expects a numpy array (OpenCV format)
+        image_np = np.array(image)
         
-        return image
+        # Apply the transform
+        augmented = welding_transform(image=image_np)["image"]
+        
+        return augmented
 
 class WeldingDataset(Dataset):
     """Dataset for welding patch images with binary classification"""
@@ -285,7 +303,7 @@ class WeldingClassifier:
         # Data transforms
         self.train_transform = transforms.Compose([
             LetterboxResize(target_size=target_size),
-            WeldAugmentation(p=0.5),
+            WeldAugmentation(),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
@@ -297,7 +315,7 @@ class WeldingClassifier:
         ])
         
         negative_weight = torch.tensor(
-            [float(os.getenv("CLASS_GOOD_DISTRIB"))/float(os.getenv("CLASS_BAD_DISTRIB"))], 
+            [float(os.getenv("CLASS_GOOD_DISTRIB", 0.5))/float(os.getenv("CLASS_BAD_DISTRIB", 0.5))], 
             device=self.device
         )
 
@@ -312,7 +330,7 @@ class WeldingClassifier:
         dataloaders = {}
         
         # Training dataloader
-        balanced = os.getenv("BALANCED_DATA")
+        balanced = bool(os.getenv("BALANCED_DATA"))
         train_dataset = WeldingDataset(
             self.train_data_dir,
             transform=self.train_transform,
