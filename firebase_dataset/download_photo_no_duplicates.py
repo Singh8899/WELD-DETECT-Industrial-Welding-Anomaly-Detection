@@ -23,13 +23,11 @@ val_folder = os.path.join(download_folder, "val")
 os.makedirs(train_folder, exist_ok=True)
 os.makedirs(val_folder, exist_ok=True)
 
-# blobs = list(bucket.list_blobs(prefix="processed_photos_3/"))
-blobs = list(bucket.list_blobs(prefix="errors/"))
+blobs = list(bucket.list_blobs(prefix="processed_photos_3/"))
 
 db = firestore.client()
 
-# photos_ref = db.collection("photos_3")
-photos_ref = db.collection("errors")
+photos_ref = db.collection("photos_3")
 
 
 # First, collect all photos with their metadata
