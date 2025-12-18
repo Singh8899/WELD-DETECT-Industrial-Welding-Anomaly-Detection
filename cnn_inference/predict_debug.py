@@ -1,15 +1,15 @@
 import logging
+import os
 from formatter import draw_boxes
 
-import os
 import cv2
 import numpy as np
 import torch
 import torch.nn as nn
 from classes import Detection, InferenceResponse
-from ultralytics import YOLO
-from torchvision import transforms, models
 from PIL import Image
+from torchvision import models, transforms
+from ultralytics import YOLO
 
 output_dir = 'pred_results'
 image_path = 'examples/20250730_190642_222398.jpeg'
@@ -195,6 +195,7 @@ print(f"Found {len(inference_response.predictions)} detections")
 
 import os
 import xml.etree.ElementTree as ET
+
 
 def load_voc_annotations(xml_path):
     """

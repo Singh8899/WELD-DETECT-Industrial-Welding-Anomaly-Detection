@@ -4,27 +4,28 @@ ResNet-50 Binary Classifier for Welding Anomaly Detection
 Fine-tuned ResNet-50 for binary classification of weld ROIs (good/bad)
 """
 
-import os
 import argparse
+import copy
+import os
+import random
+from pathlib import Path
+
+import albumentations as A
 import cv2
 import numpy as np
 import torch
 import torch.nn as nn
-import albumentations as A
 import torch.nn.functional as F
-from pathlib import Path
-from sklearn.metrics import (roc_auc_score, classification_report, confusion_matrix, 
-                                precision_recall_curve, f1_score, average_precision_score,
-                                accuracy_score, precision_score, recall_score)
-from torchvision import transforms, models
-from torch.utils.data import Dataset, DataLoader
-from matplotlib import pyplot as plt
-from tqdm import tqdm
-import random
-from PIL import Image, ImageEnhance
-import copy
-
 from dotenv import find_dotenv, load_dotenv
+from matplotlib import pyplot as plt
+from PIL import Image, ImageEnhance
+from sklearn.metrics import (accuracy_score, average_precision_score,
+                             classification_report, confusion_matrix, f1_score,
+                             precision_recall_curve, precision_score,
+                             recall_score, roc_auc_score)
+from torch.utils.data import DataLoader, Dataset
+from torchvision import models, transforms
+from tqdm import tqdm
 
 load_dotenv(find_dotenv())
 

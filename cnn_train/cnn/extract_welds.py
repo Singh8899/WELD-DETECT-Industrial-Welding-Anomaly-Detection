@@ -6,12 +6,13 @@ Saves cropped and resized patches for PatchCore training.
 """
 
 import os
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
 import cv2
 import numpy as np
-from pathlib import Path
-import xml.etree.ElementTree as ET
-from tqdm import tqdm
 from dotenv import find_dotenv, load_dotenv
+from tqdm import tqdm
 
 load_dotenv(find_dotenv())
 

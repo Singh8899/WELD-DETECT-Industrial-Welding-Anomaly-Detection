@@ -1,17 +1,17 @@
 import logging
-from formatter import draw_boxes
-
-import xml.etree.ElementTree as ET
 import os
+import xml.etree.ElementTree as ET
+from formatter import draw_boxes
+from pathlib import Path
+
 import cv2
 import numpy as np
 import torch
 import torch.nn as nn
 from classes import Detection, InferenceResponse
-from ultralytics import YOLO
-from torchvision import transforms, models
 from PIL import Image
-from pathlib import Path
+from torchvision import models, transforms
+from ultralytics import YOLO
 
 output_dir = 'pred_results'
 # image_path = 'examples/20250730_190642_222398.jpeg'

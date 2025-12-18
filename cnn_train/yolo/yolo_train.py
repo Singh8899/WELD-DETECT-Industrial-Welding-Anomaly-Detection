@@ -5,12 +5,12 @@ Single class detection for identifying welding regions in images.
 """
 
 import os
-import yaml
 from pathlib import Path
-from ultralytics import YOLO
-import torch
 
+import torch
+import yaml
 from dotenv import find_dotenv, load_dotenv
+from ultralytics import YOLO
 
 load_dotenv(find_dotenv())
 
