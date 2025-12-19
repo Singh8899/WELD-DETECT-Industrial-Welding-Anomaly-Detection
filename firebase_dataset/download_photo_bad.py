@@ -1,12 +1,12 @@
 import os
-import random
 import xml.etree.ElementTree as ET
 from datetime import datetime
+import random
+from tqdm import tqdm
 
 import firebase_admin
 from firebase_admin import credentials, firestore, storage
 from PIL import Image
-from tqdm import tqdm
 
 random.seed(69)
 
@@ -22,11 +22,9 @@ val_folder = os.path.join(download_folder, "val")
 os.makedirs(train_folder, exist_ok=True)
 os.makedirs(val_folder, exist_ok=True)
 
-# blobs = list(bucket.list_blobs(prefix="processed_photos_3/"))
 blobs = list(bucket.list_blobs(prefix="errors/"))
 db = firestore.client()
 random.shuffle(blobs)
-# photos_ref = db.collection("photos_checked_3")
 photos_ref = db.collection("errors")
 
 yes_count = 0
@@ -43,21 +41,25 @@ for blob in bar:
     photo_doc = photos_ref.document(photo_id).get()
     if not photo_doc.exists:
         continue
-
+    
+    
     photo_data = photo_doc.to_dict()
-    if not photo_data.get("processed", False):
-        continue
     pin_data = photo_data.get("annotations")
+    if not pin_data:
+        continue
+
     if len(pin_data) == 0:
         continue
     for pin in pin_data:
-
-        if pin.get("reviewed", False):
-            photo_count += 1
-            new_blobs.append(blob)
-            break
+        photo_count += 1
+        new_blobs.append(blob)
+        break
     bar.update()
-print("valid data elements", photo_count)
+print("TOTAL data elements", photo_count)
+
+yes_count = 0
+no_count = 0
+photo_count = 0
 
 val_split = int(0.2 * len(new_blobs))
 # Using balanced block as validation set (images 2363-2862) with perfect 50/50 good/bad balance

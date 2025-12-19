@@ -83,10 +83,25 @@ def write_voc(blob, file_name, photo_id, pin_data, folder):
         bad += label == "bad_weld"
 
         bndbox = ET.SubElement(obj, "bndbox")
-        x_left = max(pin.get("x_left"), 0)
-        x_right = min(pin.get("x_right"), width)
-        y_top = max(pin.get("y_top"), 0)
-        y_bottom = min(pin.get("y_bottom"), height)
+        x_left = pin.get("x_left")
+        x_right = pin.get("x_right")
+        y_top = pin.get("y_top")
+        y_bottom = pin.get("y_bottom")
+
+        raw_coords = (x_left, x_right, y_top, y_bottom)
+        if any(v is None for v in raw_coords):
+            print(f"Warning: Missing bounding box value for photo {photo_id}. coords={raw_coords}")
+        if (x_left is not None and (x_left < 0 or x_left >= width)) or \
+           (x_right is not None and (x_right < 0 or x_right > width)) or \
+           (y_top is not None and (y_top < 0 or y_top >= height)) or \
+           (y_bottom is not None and (y_bottom < 0 or y_bottom > height)):
+            print(f"Warning: Invalid bounding box for photo {photo_id}.")
+            print(f"x_left: {x_left}, x_right: {x_right}, y_top: {y_top}, y_bottom: {y_bottom}")
+
+        x_left = 0 if x_left is None else max(min(x_left, width), 0)
+        x_right = 0 if x_right is None else max(min(x_right, width), 0)
+        y_top = 0 if y_top is None else max(min(y_top, height), 0)
+        y_bottom = 0 if y_bottom is None else max(min(y_bottom, height), 0)
         ET.SubElement(bndbox, "xmin").text = str(x_left)
         ET.SubElement(bndbox, "xmax").text = str(x_right)
         ET.SubElement(bndbox, "ymin").text = str(y_top)
@@ -156,8 +171,6 @@ def fetch_error_photos():
             continue
         pins = data.get("annotations", [])
         if len(pins) < MIN_PIN_LEN:
-            continue
-        if not any(pin.get("reviewed", False) for pin in pins):
             continue
         selected.append({"blob": blob, "file_name": file_name, "photo_id": photo_id, "pins": pins})
     return selected
