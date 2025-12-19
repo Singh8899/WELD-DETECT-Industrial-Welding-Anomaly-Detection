@@ -1,12 +1,12 @@
 import os
+import random
 import xml.etree.ElementTree as ET
 from datetime import datetime
-import random
-from tqdm import tqdm
 
 import firebase_admin
 from firebase_admin import credentials, firestore, storage
 from PIL import Image
+from tqdm import tqdm
 
 random.seed(69)
 
